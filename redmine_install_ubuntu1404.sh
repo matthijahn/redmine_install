@@ -86,11 +86,53 @@ adduser --disabled-login --gecos '$s_user_name' $s_user_alias
 
 clear
 
-echo "Lade Ruby von Git herunter"
+echo "Download Ruby from Git"
 su - $s_user_alias -c "git clone git://github.com/sstephenson/rbenv.git .rbenv"
 su - $s_user_alias -c "git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build"
 
+echo "Export PATH Variables and restart the shell"
+
+su - $s_user_alias -c "echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile"
+su - $s_user_alias -c "echo 'eval "$(rbenv init -)"' >> ~/.bash_profile"
+su - $s_user_alias -c "exec $SHELL -l"
+
+echo "install Ruby and set it global"
 
 
+su - $s_user_alias -c "rbenv install 2.1.2"
+
+su - $s_user_alias -c "rbenv global 2.1.2"
+
+su - $s_user_alias -c "ruby -v" #may build a Structure to check if ruby is correctly installed before proceeding
+
+sleep 5
+
+clear
+echo "Download Redmine and set permissions "
+su - $s_user_alias -c "svn co http://svn.redmine.org/redmine/branches/2.5-stable redmine"
+su - $s_user_alias -c "mkdir -p redmine/tmp/pids redmine/tmp/sockets redmine/public/plugin_assets"
+su - $s_user_alias -c "chmod -R 755 redmine/files redmine/log redmine/tmp redmine/public/plugin_assets"
+
+echo "writing puma config"
+
+su - $s_user_alias -c "echo "#!/usr/bin/env puma \r
+	\r
+	# https://gist.github.com/jbradach/6ee5842e5e2543d59adb \r
+	\r
+	# start puma with: \r
+	# RAILS_ENV=production bundle exec puma -C ./config/puma.rb \r
+	\r
+	application_path = '/home/redmine/redmine' \r
+	directory application_path \r
+	environment 'production' \r
+	daemonize true \r
+	pidfile "#{application_path}/tmp/pids/puma.pid" \r
+	state_path "#{application_path}/tmp/pids/puma.state" \r
+	stdout_redirect "#{application_path}/log/puma.stdout.log", "#{application_path}/log/puma.stderr.log" \r
+	bind "unix://#{application_path}/tmp/sockets/redmine.sock" " > /redmine/config/puma.rb"
+
+sleep 5
+
+clear
 
 exit 0
