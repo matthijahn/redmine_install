@@ -10,6 +10,6 @@ You gonna need a clean ubuntu 14.04.4 server istallation
 
 ## Software used
 
-*nginx
-*puma
-*MariaDB
+* nginx
+* puma
+* MariaDB
