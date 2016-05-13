@@ -24,7 +24,7 @@ read -p "Install latest Ubuntu updates? (y/n) " c_install_updates
 
 if [ $c_install_updates = "y" ]; then
 	apt-get update
-	apt-get upgrade
+	apt-get upgrade # automatic install without prompt
 else
 	exit 2
 fi
@@ -94,9 +94,10 @@ su - $s_user_alias -c "git clone git://github.com/sstephenson/ruby-build.git ~/.
 
 echo "Export PATH Variables and restart the shell"
 
-su - $s_user_alias -c "echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile"
-su - $s_user_alias -c "echo 'eval "$(rbenv init -)"' >> ~/.bash_profile"
-su - $s_user_alias -c "exec $SHELL -l"
+echo "export PATH="/home/$s_user_alias/.rbenv/bin:$PATH"" > bash_conf.part1
+cat  bash_conf.part1 bash_conf.part > /home/$s_user_alias/.bash_profile
+chown $s_user_alias:$s_user_alias /home/$s_user_alias/.bash_profile
+#su - $s_user_alias -c "exec $SHELL -l"
 
 echo "install Ruby and set it global"
 
@@ -126,7 +127,7 @@ su - $s_user_alias -c "(cat <<'EOF'
 # start puma with:
 # RAILS_ENV=production bundle exec puma -C ./config/puma.rb
 EOF
-) > /redmine/config/puma.rb"
+) > redmine/config/puma.rb"
 su - $s_user_alias -c "echo application_path = '/home/$s_user_alias/redmine' >> /redmine/config/puma.rb"
 su - $s_user_alias -c "(cat <<'EOF'
 directory application_path
@@ -137,13 +138,13 @@ state_path "#{application_path}/tmp/pids/puma.state"
 stdout_redirect "#{application_path}/log/puma.stdout.log", "#{application_path}/log/puma.stderr.log" 
 bind "unix://#{application_path}/tmp/sockets/redmine.sock" 
 EOF
-) >> /redmine/config/puma.rb"
+) >> redmine/config/puma.rb"
 
 
 read -p "Do you want to check the puma configuration? (y/n) " c_check_puma
 
 if [ $c_check_puma = "y" ]; then
-	su - $s_user_alias -c "nano /redmine/config/puma.rb"
+	su - $s_user_alias -c "nano redmine/config/puma.rb"
 fi
 
 clear
