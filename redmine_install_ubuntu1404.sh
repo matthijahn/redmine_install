@@ -48,11 +48,13 @@ echo "libreadline-dev"
 echo "libyaml-dev"
 echo "zlib1g-dev"
 echo "python-software-properties"
+echo "mariadb-server"
+echo "nginx"
 
 read -p "Do you want to install these Packages? (y/n) " c_install_packages
 
 if [ $c_install_packages = "y" ]; then
-	apt-get -y install autoconf git subversion curl bison imagemagick libmagickwand-dev build-essential libmariadbclient-dev libssl-dev libreadline-dev libyaml-dev zlib1g-dev python-software-properties
+	apt-get -y install autoconf git subversion curl bison imagemagick libmagickwand-dev build-essential libmariadbclient-dev libssl-dev libreadline-dev libyaml-dev zlib1g-dev python-software-properties mariadb-server nginx
 else
 	clear
 	echo "Spezialexperte"
@@ -160,6 +162,7 @@ while [ $s_db_userpw != $s_db_userpw_check]; do
 	clear
 	if [ $s_db_userpw != $s_db_userpw_check]; then
 		echo "Passwords dont match. Reenter!"
+	fi
 done
 
 su - $s_user_alias -c "echo "CREATE DATABASE $s_db_name CHARACTER SET utf8;\r
