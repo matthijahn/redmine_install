@@ -25,7 +25,8 @@ read -p "Install latest Ubuntu updates? (y/n) " c_install_updates
 if [ $c_install_updates = "y" ]; then
 	apt-get update
 	apt-get upgrade
-#	exit 2
+else
+	exit 2
 fi
 
 clear
@@ -53,8 +54,9 @@ read -p "Do you want to install these Packages? (y/n) " c_install_packages
 if [ $c_install_packages = "y" ]; then
 	apt-get -y install autoconf git subversion curl bison imagemagick libmagickwand-dev build-essential libmariadbclient-dev libssl-dev libreadline-dev libyaml-dev zlib1g-dev python-software-properties
 else
-	echo "Error"
-	#exit 1
+	clear
+	echo "Spezialexperte"
+	exit 1
 fi 
 
 clear
@@ -124,7 +126,7 @@ su - $s_user_alias -c "(cat <<'EOF'
 # start puma with:
 # RAILS_ENV=production bundle exec puma -C ./config/puma.rb
 EOF
-) > /redmine/config/puma.rb
+) > /redmine/config/puma.rb"
 su - $s_user_alias -c "echo application_path = '/home/$s_user_alias/redmine' >> /redmine/config/puma.rb"
 su - $s_user_alias -c "(cat <<'EOF'
 directory application_path
@@ -182,7 +184,12 @@ su - $s_user_alias -c "echo "production:\r
   username: $s_db_username\r
   password: "$s_db_userpw"\r
   encoding: utf8" > redmine/config/database.yml"
-  
+read -p "Check DB config? (y/n) " c_check_db_config
+
+if [ $c_check_db_config = "y" ]; then
+	su - $s_user_alias -c "nano redmine/config/database.yml"
+fi
+
 clear
 
 echo "install Gems"
@@ -334,6 +341,9 @@ read -p "Do you want to check your nginx config? (y/n) " c_check_nginx_config
 if [ $c_check_ngingx_config = "y" ]; then
 	nano /etc/nginx/sites-available/redmine
 fi
+
+ln -s /etc/nginx/sites-available/redmine /etc/nginx/sites-enabled/redmine
+service nginx restart
 
 echo "Setup finished"
 
