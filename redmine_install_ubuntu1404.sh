@@ -113,6 +113,8 @@ su - $s_user_alias -c "svn co http://svn.redmine.org/redmine/branches/2.5-stable
 su - $s_user_alias -c "mkdir -p redmine/tmp/pids redmine/tmp/sockets redmine/public/plugin_assets"
 su - $s_user_alias -c "chmod -R 755 redmine/files redmine/log redmine/tmp redmine/public/plugin_assets"
 
+clear
+
 echo "writing puma config"
 
 su - $s_user_alias -c "echo "#!/usr/bin/env puma \r
@@ -131,8 +133,40 @@ su - $s_user_alias -c "echo "#!/usr/bin/env puma \r
 	stdout_redirect "#{application_path}/log/puma.stdout.log", "#{application_path}/log/puma.stderr.log" \r
 	bind "unix://#{application_path}/tmp/sockets/redmine.sock" " > /redmine/config/puma.rb"
 
-sleep 5
+read -p "Do you want to check the puma configuration? (y/n) " c_check_puma
+
+if [ $c_check_puma = "y" ]; then
+	su - $s_user_alias -c "nano /redmine/config/puma.rb"
+fi
 
 clear
+echo "MariaDB configuration"
+read -p "Name of database: " s_db_name
+read -p "Database username: " s_db_username
+s_db_usrpw="ChangeMe"
+s_db_usrpw_check="ChangeMeCheck"
+while [ $s_db_userpw != $s_db_userpw_check]; do
+	read -p "Enter new user password" s_db_usrpw
+	clear
+	read -p "Confirm new user password" s_db_usrpw_check
+	clear
+	if [ $s_db_userpw != $s_db_userpw_check]; then
+		echo "Passwords dont't match. Reenter!"
+done
+
+su - $s_user_alias -c "echo "CREATE DATABASE $s_sd_name CHARACTER SET utf8;
+CREATE USER '$s_db_username'@'localhost' IDENTIFIED BY '$s_db_userpw';
+GRANT ALL PRIVILEGES ON $s_db_name.* TO '$s_db_username'@'localhost';" > rmdbconf.sql"
+
+read "Check your MariaDB config? (y/n) " c_check_mariadb
+
+if [ $c_check_mariadb = "y" ]; then
+	su - $s_user_alias -c "nano rmdbconf.sql"
+fi
+
+echo "Creating new database"
+
+su - $s_user_alias -c "rmdbconf.sql | mysql -u root -p"
+
 
 exit 0
