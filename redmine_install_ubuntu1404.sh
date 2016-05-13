@@ -176,7 +176,15 @@ su - $s_user_alias -c "echo "production:\r
   username: $s_db_username\r
   password: "$s_db_userpw"\r
   encoding: utf8" > redmine/config/database.yml"
+  
+clear
 
+echo "install Gems"
 
+su - $s_user_alias -c "echo "gem: --no-ri --no-rdoc" >> ~/.gemrc"
+su - $s_user_alias -c "cd redmine && echo -e "# Gemfile.local\ngem 'puma'" >> Gemfile.local"
+su - $s_user_alias -c "cd redmine && gem install bundler"
+su - $s_user_alias -c "cd redmine && rbenv rehash"
+su - $s_user_alias -c "cd redmine && bundle install --without development test"
 
 exit 0
