@@ -137,21 +137,6 @@ bind "unix://#{application_path}/tmp/sockets/redmine.sock"
 EOF
 ) >> /redmine/config/puma.rb"
 
-#su - $s_user_alias -c "echo "#!/usr/bin/env puma \r
-#	\r
-#	# https://gist.github.com/jbradach/6ee5842e5e2543d59adb \r
-#	\r
-#	# start puma with: \r
-#	# RAILS_ENV=production bundle exec puma -C ./config/puma.rb \r
-#	\r
-#	application_path = '/home/redmine/redmine' \r
-#	directory application_path \r
-#	environment 'production' \r
-#	daemonize true \r
-#	pidfile "#{application_path}/tmp/pids/puma.pid" \r
-#	state_path "#{application_path}/tmp/pids/puma.state" \r
-#	stdout_redirect "#{application_path}/log/puma.stdout.log", "#{application_path}/log/puma.stderr.log" \r
-#	bind "unix://#{application_path}/tmp/sockets/redmine.sock" " > /redmine/config/puma.rb"
 
 read -p "Do you want to check the puma configuration? (y/n) " c_check_puma
 
@@ -171,7 +156,7 @@ while [ $s_db_userpw != $s_db_userpw_check]; do
 	read -p "Confirm new user password" s_db_usrpw_check
 	clear
 	if [ $s_db_userpw != $s_db_userpw_check]; then
-		echo "Passwords dont't match. Reenter!"
+		echo "Passwords dont match. Reenter!"
 done
 
 su - $s_user_alias -c "echo "CREATE DATABASE $s_db_name CHARACTER SET utf8;\r
@@ -233,7 +218,7 @@ cat <<'EOF'
 EOF
 ) > /etc/init.d/redmine
 
-echo APP_USER=$s_user_alias >> /etc/init.d/redmine
+echo "APP_USER=$s_user_alias" >> /etc/init.d/redmine
 
 (
 cat <<'EOF'
@@ -269,7 +254,7 @@ case $1 in
         ;;
   restart|reload)
         sig USR2 && echo "Restarting" && exit 0
-        echo >&2 "Couldn't restart"
+        echo >&2 "Couldnt restart"
         ;;
   status)
         sig 0 && echo >&2 "Running " && exit 0
@@ -283,9 +268,62 @@ esac
 
 :
 EOF
-) >> /etc/init.d/redmine"
+) >> /etc/init.d/redmine
+
+read -p "Do you want to check the redmine init configuration? (y/n) " c_check_redmine_init
+
+if [ $c_check_redmine_init = "y" ]; then
+	nano /etc/init.d/redmine
+fi
 
 chmod +x /etc/init.d/redmine
 update-rc.d redmine defaults
+
+(
+cat <<'EOF'
+upstream puma_redmine {
+EOF
+) > /etc/nginx/sites-available/redmine
+
+echo "server unix:/home/$s_user_alias/redmine/tmp/sockets/redmine.sock fail_timeout=0;" >> /etc/nginx/sites-available/redmine
+
+(
+cat <<'EOF'
+  #server 127.0.0.1:3000;
+}
+
+server {
+  server_name snacks.rudeotter.com;
+  listen 80;
+ EOF
+ ) >> /etc/nginx/sites-available/redmine
+ echo "root /home/$s_user_alias/redmine/public;" >> /etc/nginx/sites-available/redmine
+ 
+ (
+ cat <<'EOF'
+   location / {
+    try_files $uri/index.html $uri.html $uri @ruby;
+  }
+
+  location @ruby {
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP  $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_redirect off;
+    proxy_read_timeout 300;
+    proxy_pass http://puma_redmine;
+  }
+}
+EOF
+) >> /etc/nginx/sites-available/redmine
+
+read -p "Do you want to check your nginx config? (y/n) " c_check_nginx_config
+
+if [ $c_check_ngingx_config = "y" ]; then
+	nano /etc/nginx/sites-available/redmine
+fi
+
+echo " Setup finished"
 
 exit 0
