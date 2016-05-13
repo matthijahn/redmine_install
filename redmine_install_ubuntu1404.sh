@@ -279,6 +279,11 @@ fi
 chmod +x /etc/init.d/redmine
 update-rc.d redmine defaults
 
+clear
+
+echo "server Configuration"
+read -p "Enter Servername: " s_server_name
+
 (
 cat <<'EOF'
 upstream puma_redmine {
@@ -293,10 +298,16 @@ cat <<'EOF'
 }
 
 server {
-  server_name snacks.rudeotter.com;
+EOF
+) >> /etc/nginx/sites-available/redmine
+
+echo server_name $s_server_name;
+(
+cat <<'EOF'
   listen 80;
  EOF
- ) >> /etc/nginx/sites-available/redmine
+) >> /etc/nginx/sites-available/redmine
+
  echo "root /home/$s_user_alias/redmine/public;" >> /etc/nginx/sites-available/redmine
  
  (
@@ -324,6 +335,6 @@ if [ $c_check_ngingx_config = "y" ]; then
 	nano /etc/nginx/sites-available/redmine
 fi
 
-echo " Setup finished"
+echo "Setup finished"
 
 exit 0
