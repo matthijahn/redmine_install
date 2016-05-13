@@ -116,22 +116,42 @@ su - $s_user_alias -c "chmod -R 755 redmine/files redmine/log redmine/tmp redmin
 clear
 
 echo "writing puma config"
+su - $s_user_alias -c "(cat <<'EOF'
+#!/usr/bin/env puma
 
-su - $s_user_alias -c "echo "#!/usr/bin/env puma \r
-	\r
-	# https://gist.github.com/jbradach/6ee5842e5e2543d59adb \r
-	\r
-	# start puma with: \r
-	# RAILS_ENV=production bundle exec puma -C ./config/puma.rb \r
-	\r
-	application_path = '/home/redmine/redmine' \r
-	directory application_path \r
-	environment 'production' \r
-	daemonize true \r
-	pidfile "#{application_path}/tmp/pids/puma.pid" \r
-	state_path "#{application_path}/tmp/pids/puma.state" \r
-	stdout_redirect "#{application_path}/log/puma.stdout.log", "#{application_path}/log/puma.stderr.log" \r
-	bind "unix://#{application_path}/tmp/sockets/redmine.sock" " > /redmine/config/puma.rb"
+# https://gist.github.com/jbradach/6ee5842e5e2543d59adb
+
+# start puma with:
+# RAILS_ENV=production bundle exec puma -C ./config/puma.rb
+EOF
+) > /redmine/config/puma.rb
+su - $s_user_alias -c "echo application_path = '/home/$s_user_alias/redmine' >> /redmine/config/puma.rb"
+su - $s_user_alias -c "(cat <<'EOF'
+directory application_path
+environment 'production'
+daemonize true 
+pidfile "#{application_path}/tmp/pids/puma.pid"
+state_path "#{application_path}/tmp/pids/puma.state"
+stdout_redirect "#{application_path}/log/puma.stdout.log", "#{application_path}/log/puma.stderr.log" 
+bind "unix://#{application_path}/tmp/sockets/redmine.sock" 
+EOF
+) >> /redmine/config/puma.rb"
+
+#su - $s_user_alias -c "echo "#!/usr/bin/env puma \r
+#	\r
+#	# https://gist.github.com/jbradach/6ee5842e5e2543d59adb \r
+#	\r
+#	# start puma with: \r
+#	# RAILS_ENV=production bundle exec puma -C ./config/puma.rb \r
+#	\r
+#	application_path = '/home/redmine/redmine' \r
+#	directory application_path \r
+#	environment 'production' \r
+#	daemonize true \r
+#	pidfile "#{application_path}/tmp/pids/puma.pid" \r
+#	state_path "#{application_path}/tmp/pids/puma.state" \r
+#	stdout_redirect "#{application_path}/log/puma.stdout.log", "#{application_path}/log/puma.stderr.log" \r
+#	bind "unix://#{application_path}/tmp/sockets/redmine.sock" " > /redmine/config/puma.rb"
 
 read -p "Do you want to check the puma configuration? (y/n) " c_check_puma
 
@@ -169,6 +189,7 @@ echo "Creating new database"
 su - $s_user_alias -c "cat rmdbconf.sql | mysql -u root -p"
 
 echo "Cofiguring Database"
+
 su - $s_user_alias -c "echo "production:\r
   adapter: mysql2\r
   database: $s_db_name\r
@@ -212,7 +233,7 @@ cat <<'EOF'
 EOF
 ) > /etc/init.d/redmine
 
-echo "APP_USER=$s_user_alias" >> /etc/init.d/redmine
+echo APP_USER=$s_user_alias >> /etc/init.d/redmine
 
 (
 cat <<'EOF'
@@ -262,7 +283,7 @@ esac
 
 :
 EOF
-) >> /etc/init.d/redmine
+) >> /etc/init.d/redmine"
 
 chmod +x /etc/init.d/redmine
 update-rc.d redmine defaults
