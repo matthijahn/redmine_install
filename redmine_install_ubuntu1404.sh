@@ -154,8 +154,8 @@ while [ $s_db_userpw != $s_db_userpw_check]; do
 		echo "Passwords dont't match. Reenter!"
 done
 
-su - $s_user_alias -c "echo "CREATE DATABASE $s_sd_name CHARACTER SET utf8;
-CREATE USER '$s_db_username'@'localhost' IDENTIFIED BY '$s_db_userpw';
+su - $s_user_alias -c "echo "CREATE DATABASE $s_db_name CHARACTER SET utf8;\r
+CREATE USER '$s_db_username'@'localhost' IDENTIFIED BY '$s_db_userpw';\r
 GRANT ALL PRIVILEGES ON $s_db_name.* TO '$s_db_username'@'localhost';" > rmdbconf.sql"
 
 read "Check your MariaDB config? (y/n) " c_check_mariadb
@@ -166,7 +166,17 @@ fi
 
 echo "Creating new database"
 
-su - $s_user_alias -c "rmdbconf.sql | mysql -u root -p"
+su - $s_user_alias -c "cat rmdbconf.sql | mysql -u root -p"
+
+echo "Cofiguring Database"
+su - $s_user_alias -c "echo "production:\r
+  adapter: mysql2\r
+  database: $s_db_name\r
+  host: localhost\r
+  username: $s_db_username\r
+  password: "$s_db_userpw"\r
+  encoding: utf8" > redmine/config/database.yml"
+
 
 
 exit 0
